@@ -24,17 +24,20 @@ export function showOrHideAppUseOsascript (appName) {
   return runOsascript(['-e', `application "${appName}" is running`]).then(({ code, stdout }) => {
     console.log(code, stdout)
     if (code === 0 && stdout === 'false') {
-      console.log('xxx')
       return runOsascript(['-e', `tell application "${appName}" to activate`])
     } else if (code === 0 && stdout !== 'false') {
-      runOsascript(['-e', 'application (path to frontmost application as text)']).then(res => {
-        console.log(res)
+      return runOsascript(['-e', 'application (path to frontmost application as text)']).then(res => {
+        console.log(res.stdout, appName)
+        if (res.stdout === appName) {
+          return runOsascript(['-e', 'tell application "Finder"', '-e', `set visible of process "${appName}" to false`, '-e', 'end tell'])
+        } else {
+          console.log('555')
+          return runOsascript(['-e', `tell application "${appName}" to activate`])
+        }
       })
-      // return runOsascript(['-e', 'tell application "Finder"', '-e', `set visible of process "${appName}" to false`, '-e', 'end tell'])
-      // return runOsascript(['-e', 'tell application "Finder"', '-e', `set visible of process "${appName}" to true`, '-e', 'end tell'])
     }
 
-  //   return new Error('出错')
+    return new Error('出错')
   })
 }
 
