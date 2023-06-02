@@ -52,6 +52,18 @@ function modifyStr () {
   invoke('storage_insert', { key: '2', value: 'yyy' })
 }
 
+function getAPP () {
+  invoke('get_frontmost_app_path').then(res => {
+    console.log(res)
+  })
+}
+
+function activeAPP () {
+  invoke('open_app', { bundleId: 'com.apple.Safari' }).then(res => {
+    console.log(res)
+  })
+}
+
 // 在前端代码中
 let pressedKeys = new Set();
 
@@ -72,6 +84,8 @@ window.addEventListener('keyup', (event) => {
     <button @click="deleteStr">删除数据</button>
     <button @click="modifyStr">修改数据</button>
     <button @click="getStr">获取已经添加过的数据</button>
+    <button @click="getAPP">获取当前的APP</button>
+    <button @click="activeAPP">打开APP</button>
   </div>
 </template>
 

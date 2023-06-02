@@ -3,6 +3,9 @@
   windows_subsystem = "none"
 )]
 
+mod frontmost_app;  // 声明你的文件
+use frontmost_app::{get_frontmost_app_path, open_app};
+
 use std::{collections::HashMap, sync::Mutex};
 use tauri::State;
 use serde_json::{json, to_string};
@@ -36,15 +39,11 @@ fn storage_delete(key: String, storage: State<Storage>) {
   storage.store.lock().unwrap().remove(&key);
 }
 
-// #[tauri::command]
-// fn greet(name: &str) -> String {
-//    format!("Hello, {}!", name)
-// }
 
 fn main() {
   tauri::Builder::default()
     .manage(Storage { store: Default::default() })
-    .invoke_handler(tauri::generate_handler![load_storage, storage_insert, storage_delete])
+    .invoke_handler(tauri::generate_handler![load_storage, storage_insert, storage_delete, get_frontmost_app_path, open_app])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
