@@ -1,17 +1,22 @@
 import { Command } from '@tauri-apps/api/shell'
 import { register } from '@tauri-apps/api/globalShortcut'
+import { invoke } from '@tauri-apps/api/tauri'
 
-export function registerGloabalShortcutForSpecificApp ({ shortcut, appName }) {
+export function registerGloabalShortcutForSpecificApp ({ shortcut, appPath }) {
     register(shortcut, () => {
-      showOrHideApp(appName).then(() => {
-        console.log('Shortcut triggered')
-      })
-      // runOsascript(['-e', `tell application "Finder"', '-e', 'set visible of process "${appName}" to false`, '-e', 'end tell'])
-
-      // new Command('run-osascript', ['-e', `tell application "Finder"', '-e', 'set visible of process "${appName}" to false`, '-e', 'end tell']).execute()
-      // .then(output => {
-      //   console.log(output)
+      // showOrHideApp(appName).then(() => {
+      //   console.log('Shortcut triggered')
       // })
+
+      invoke('get_focused_app_bundle_identifier').then(focusedAppId => {
+        invoke('get_bundle_identifier', { appPath }).then(id => {
+          if (focusedAppId === id) {
+            invoke('hide_frontmost_app')
+          } else {
+            invoke('open_app', { bundleId: id })
+          }
+        })
+      })
     })
 }
 

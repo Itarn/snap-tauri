@@ -26,7 +26,13 @@ function openApplicationsDir () {
 
   registerGloabalShortcutForSpecificApp({
     shortcut: 'Option+a',
-    appName: 'Twitter'
+    appPath: '/Applications/Twitter.app'
+  })
+}
+
+function registerGloabalShortcut () {
+  registerGloabalShortcutForSpecificApp({
+    shortcut: 'Option+a'
   })
 }
 
@@ -58,8 +64,31 @@ function getAPP () {
   })
 }
 
+// function activeAPP () {
+//   invoke('open_app', { bundleId: 'com.apple.Safari' }).then(res => {
+//     console.log(res)
+//   })
+// }
 function activeAPP () {
-  invoke('open_app', { bundleId: 'com.apple.Safari' }).then(res => {
+  invoke('open_app', { bundleId: 'com.netease.163music' }).then(res => {
+    console.log(res)
+  })
+}
+function hideAPP () {
+  invoke('hide_frontmost_app').then(res => {
+    console.log(res)
+  })
+}
+function getfrontmostApp () {
+  invoke('get_focused_app_bundle_identifier').then(res => {
+    console.log(res)
+  }).catch(err => {
+    console.log(err)
+  })
+}
+
+function getAppId () {
+  invoke('get_bundle_identifier', { appPath: '/Applications/NeteaseMusic.app/' }).then(res => {
     console.log(res)
   })
 }
@@ -79,6 +108,7 @@ window.addEventListener('keyup', (event) => {
 <template>
   <div class="container">
     <button @click="openApplicationsDir">注册快捷键</button>
+    <button @click="registerGloabalShortcut">原生注册快捷键</button>
     <button @click="cancelShortcut">取消快捷键</button>
     <button @click="addStr">添加数据</button>
     <button @click="deleteStr">删除数据</button>
@@ -86,6 +116,9 @@ window.addEventListener('keyup', (event) => {
     <button @click="getStr">获取已经添加过的数据</button>
     <button @click="getAPP">获取当前的APP</button>
     <button @click="activeAPP">打开APP</button>
+    <button @click="hideAPP">隐藏APP</button>
+    <button @click="getfrontmostApp">获取当前聚焦的APP</button>
+    <button @click="getAppId">获取APP ID</button>
   </div>
 </template>
 
