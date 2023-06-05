@@ -25,7 +25,7 @@ function openApplicationsDir () {
   // })
 
   registerGloabalShortcutForSpecificApp({
-    shortcut: 'Option+a',
+    shortcut: 'Control+a',
     appPath: '/Applications/Twitter.app'
   })
 }
@@ -93,16 +93,30 @@ function getAppId () {
   })
 }
 
-// 在前端代码中
+// // 在前端代码中
 let pressedKeys = new Set();
 
+function clearPressedKeys () {
+  pressedKeys.clear()
+}
+
+const mods = new Map([
+  ['altKey', 'Alt'],
+  ['ctrlKey', 'Control'],
+  ['metaKey', 'Meta'],
+  ['shiftKey', 'Shift']
+])
+
 window.addEventListener('keydown', (event) => {
-  pressedKeys.add(event.key);
-  console.log(event)
+  if (!Array.from(mods.values()).includes(event.key)) {
+    Array.from(mods.keys()).forEach(item => {
+      if (event[item]) pressedKeys.add(mods.get(item))
+    })
+    pressedKeys.add(event.code.slice(3))
+
+    console.log(Array.from(pressedKeys).join('+'))
+  }
 })
-window.addEventListener('keyup', (event) => {
-  console.log(pressedKeys)
-});
 </script>
 
 <template>
@@ -119,6 +133,7 @@ window.addEventListener('keyup', (event) => {
     <button @click="hideAPP">隐藏APP</button>
     <button @click="getfrontmostApp">获取当前聚焦的APP</button>
     <button @click="getAppId">获取APP ID</button>
+    <button @click="clearPressedKeys">清除 pressedKeys</button>
   </div>
 </template>
 
