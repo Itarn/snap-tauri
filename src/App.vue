@@ -86,7 +86,16 @@ function loadDataArr () {
   invoke('load_specified_storage', { key: 'hotkey' }).then(res => {
     if (!res) return
     const response = JSON.parse(res)
-    if (response.length) dataArr.value = response
+    if (response.length) {
+      dataArr.value = response
+
+      dataArr.value.forEach((item) => {
+        registerGloabalShortcutForSpecificApp({
+          shortcut: item.hotkey,
+          id: item.key
+        })
+      })
+    }
   })
 }
 loadDataArr()
