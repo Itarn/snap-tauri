@@ -1,11 +1,12 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { watchPausable } from '@vueuse/core'
 import { invoke } from '@tauri-apps/api/tauri'
 import { extractAppName, registerGloabalShortcutForSpecificApp } from './utils'
 import { open } from '@tauri-apps/api/dialog'
 // import { appWindow } from '@tauri-apps/api/window'
 import { Command, open as shellOpen } from '@tauri-apps/api/shell'
-import { register, unregisterAll } from '@tauri-apps/api/globalShortcut'
+import { register, unregister } from '@tauri-apps/api/globalShortcut'
 // import { appDataDir } from '@tauri-apps/api/path'
 // Open a selection dialog for directories
 // appWindow.setTitle('hello').then((res) => {
@@ -73,13 +74,23 @@ import { register, unregisterAll } from '@tauri-apps/api/globalShortcut'
 
 // 数据处理
 const dataArr = ref([])
+const { pause, resume } = watchPausable(
+  () => dataArr.value,
+  (n) => {
+    invoke('storage_insert', { key: 'hotkey', value: JSON.stringify(n) })
+  },
+  { deep: true }
+)
+pause()
 function loadDataArr () {
-  invoke('load_storage').then(res => {
+  invoke('load_specified_storage', { key: 'hotkey' }).then(res => {
+    if (!res) return
     const response = JSON.parse(res)
-    if (response.length) dataArr.value = res
+    if (response.length) dataArr.value = response
   })
 }
 loadDataArr()
+resume()
 
 // 按钮
 function openApplicationsDir () {
@@ -88,9 +99,9 @@ function openApplicationsDir () {
     multiple: false,
     defaultPath: '/Applications',
   }).then((res) => {
-    console.log(res)
     const appname = extractAppName(res)
     invoke('get_bundle_identifier', { appPath: res }).then(id => {
+      console.log(id)
       dataArr.value.push({
         key: id,
         appname,
@@ -104,10 +115,25 @@ function openApplicationsDir () {
 const focusedKey = ref('')
 function setFocusedKey (key) {
   focusedKey.value = key
-
-  window.addEventListener('keydown', keydownHandler.bind(null, key))
 }
+watch(
+  () => focusedKey.value,
+  (n) => {
+    if (n) {
+      window.addEventListener('keydown', keydownHandler)
+    } else {
+      window.removeEventListener('keydown', keydownHandler)
+    }
+  }
+)
 
+function removeShortcut () {
+  if (!focusedKey.value) return
+  const hotkey = dataArr.value.find(item => item.key === focusedKey.value)?.hotkey
+  dataArr.value = dataArr.value.filter(item => item.key !== focusedKey.value)
+  setFocusedKey('')
+  unregister(hotkey)
+}
 
 // 注册
 let pressedKeys = new Set();
@@ -122,7 +148,7 @@ const mods = new Map([
   ['shiftKey', 'Shift']
 ])
 
-function keydownHandler (id, event)  {
+function keydownHandler (event)  {
   console.log('============== keydownHandler ==================')
   if (!Array.from(mods.values()).includes(event.key)) {
     Array.from(mods.keys()).forEach(item => {
@@ -131,11 +157,11 @@ function keydownHandler (id, event)  {
     pressedKeys.add(event.code.slice(3))
 
     const shortcut = Array.from(pressedKeys).join('+')
-    dataArr.value.find(item => item.key === id).hotkey = shortcut
+    dataArr.value.find(item => item.key === focusedKey.value).hotkey = shortcut
 
-    registerGloabalShortcutForSpecificApp({ shortcut, id }).then(res => {
+    registerGloabalShortcutForSpecificApp({ shortcut, id: focusedKey.value }).then(res => {
+      setFocusedKey('')
       clearPressedKeys()
-      window.removeEventListener('keydown', keydownHandler)
     })
   }
 }
@@ -143,16 +169,15 @@ function keydownHandler (id, event)  {
 
 <template>
   <div class="container">
-    <div class="register-item" v-for="(item) in dataArr" :key="item.key">
+    <div class="register-item" v-for="(item) in dataArr" :key="item.key" @click="setFocusedKey(item.key)">
       <div class="appname">{{ item.appname }}</div>
       <div
         class="hot-key-wrapper"
         :class="focusedKey === item.key ? 'selected' : ''"
-        @click="setFocusedKey(item.key)"
       >{{ item.hotkey }}</div>
     </div>
     <button @click="openApplicationsDir">+</button>
-    <button>-</button>
+    <button @click="removeShortcut">-</button>
   </div>
 </template>
 
